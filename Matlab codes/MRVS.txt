@@ -1,0 +1,1146 @@
+classdef MRVS < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        MobileRobotControlMenuUIFigure  matlab.ui.Figure
+        UIAxes                          matlab.ui.control.UIAxes
+        UIAxes2                         matlab.ui.control.UIAxes
+        UIAxes3                         matlab.ui.control.UIAxes
+        UIAxes4                         matlab.ui.control.UIAxes
+        searchButton                    matlab.ui.control.Button
+        goButton                        matlab.ui.control.Button
+        MessageBoxTextAreaLabel         matlab.ui.control.Label
+        MessageBoxTextArea              matlab.ui.control.TextArea
+        DistancecmTextAreaLabel         matlab.ui.control.Label
+        DistancecmTextArea              matlab.ui.control.TextArea
+        connectButton                   matlab.ui.control.Button
+        disconnectButton                matlab.ui.control.Button
+        RotateCcwButton                 matlab.ui.control.Button
+        RotateCwButton                  matlab.ui.control.Button
+        Label                           matlab.ui.control.Label
+        connectLamp                     matlab.ui.control.Lamp
+        COMEditFieldLabel               matlab.ui.control.Label
+        COMEditField                    matlab.ui.control.EditField
+        UIAxesLeft                      matlab.ui.control.UIAxes
+        StopButton                      matlab.ui.control.Button
+        ConnectingCamerasButton         matlab.ui.control.Button
+        DisconnectingCamerasButton      matlab.ui.control.Button
+        AdjustPositionButton            matlab.ui.control.Button
+        UIAxesRight                     matlab.ui.control.UIAxes
+        XButton                         matlab.ui.control.Button
+        ManualControlPanel              matlab.ui.container.Panel
+        forwardButton                   matlab.ui.control.Button
+        rightButton                     matlab.ui.control.Button
+        leftButton                      matlab.ui.control.Button
+        backwardButton                  matlab.ui.control.Button
+        LeftCamEditFieldLabel           matlab.ui.control.Label
+        LeftCamEditField                matlab.ui.control.NumericEditField
+        RightCamEditFieldLabel          matlab.ui.control.Label
+        RightCamEditField               matlab.ui.control.NumericEditField
+        TabGroup                        matlab.ui.container.TabGroup
+        ExposureTab                     matlab.ui.container.Tab
+        RightCamSliderLabel             matlab.ui.control.Label
+        RightCamSlider                  matlab.ui.control.Slider
+        LeftCamSliderLabel              matlab.ui.control.Label
+        LeftCamSlider                   matlab.ui.control.Slider
+        BrightnessTab                   matlab.ui.container.Tab
+        LeftCamSlider_2Label            matlab.ui.control.Label
+        LeftCamSlider_2                 matlab.ui.control.Slider
+        RightCamSlider_2Label           matlab.ui.control.Label
+        RightCamSlider_2                matlab.ui.control.Slider
+    end
+
+    
+    properties (Access = private)
+    end
+    
+    methods (Access = private)
+        
+        function straightAhead(app)
+            global a;
+            global r1; global r2; global l1; global l2;
+            try
+                writeDigitalPin(a,r1,1);
+                writeDigitalPin(a,r2,0);
+                writeDigitalPin(a,l1,1);
+                writeDigitalPin(a,l2,0);
+            catch
+                app.MessageBoxTextArea.Value='Please Connect to Arduino';
+            end
+        end
+        
+        function turnClockwise(app)
+            global a;
+            global r1; global r2; global l1; global l2;
+            try
+                writeDigitalPin(a,r1,0);
+                writeDigitalPin(a,r2,1);
+                writeDigitalPin(a,l1,1);
+                writeDigitalPin(a,l2,0);
+            catch
+                app.MessageBoxTextArea.Value='Please Connect to Arduino';
+            end
+            
+        end
+        
+        function turnCounterClockwise(app)
+            global a;
+            global r1; global r2; global l1; global l2;
+            try
+                writeDigitalPin(a,r1,1);
+                writeDigitalPin(a,r2,0);
+                writeDigitalPin(a,l1,0);
+                writeDigitalPin(a,l2,1);
+            catch
+                app.MessageBoxTextArea.Value='Please Connect to Arduino';
+            end
+            
+        end
+        
+        function reverse(app)
+            global a;
+            global r1; global r2; global l1; global l2;
+            try
+                writeDigitalPin(a,r1,0);
+                writeDigitalPin(a,r2,1);
+                writeDigitalPin(a,l1,0);
+                writeDigitalPin(a,l2,1);
+            catch
+                app.MessageBoxTextArea.Value='Please Connect to Arduino';
+            end
+            
+        end
+        
+        function stopBoy(app)
+            global a;
+            global r1; global r2; global l1; global l2;
+            try
+                writeDigitalPin(a,r1,0);
+                writeDigitalPin(a,r2,0);
+                writeDigitalPin(a,l1,0);
+                writeDigitalPin(a,l2,0);
+            catch
+                app.MessageBoxTextArea.Value='Please Connect to Arduino';
+            end
+        end
+        
+        
+        function searchGo(app)
+            global distance;
+            global oldDistance;
+            
+            java.lang.Thread.sleep(1000)
+            searchButtonPushed(app);
+            java.lang.Thread.sleep(1500);
+            
+            AdjustPositionButtonPushed(app);
+            java.lang.Thread.sleep(1000);
+            
+            searchButtonPushed(app);
+            java.lang.Thread.sleep(1500);
+            
+            if distance > oldDistance
+                java.lang.Thread.sleep(1000)
+                searchButtonPushed(app);
+                java.lang.Thread.sleep(1500);
+                
+                AdjustPositionButtonPushed(app);
+                java.lang.Thread.sleep(1000);
+                
+                searchButtonPushed(app);
+                java.lang.Thread.sleep(1500);
+                
+                if distance > oldDistance
+                    
+                    
+                    app.MessageBoxTextArea.Value='There is an error, please search again';
+                else
+                    
+                    goButtonPushed(app);
+                    java.lang.Thread.sleep(1000);
+                    searchButtonPushed(app);
+                    java.lang.Thread.sleep(1500);
+                    goButtonPushed(app);
+                    
+                end
+            else
+                goButtonPushed(app);
+                java.lang.Thread.sleep(1000);
+                searchButtonPushed(app);
+                java.lang.Thread.sleep(1500);
+                goButtonPushed(app);
+            end
+            
+            
+        end
+        
+    end
+    
+
+    methods (Access = private)
+
+        % Code that executes after component creation
+        function startupFcn(app)
+            delete(instrfind({'Port'},{'COM4'}));
+            global cam1;
+            global cam2;
+            global a;
+            delete(cam1); delete(cam2);
+            clear cam1; clear cam2; clear a;
+            
+            global blankPic;
+            blankPic=imread('blank.jpg');
+            
+            
+            imshow(blankPic, 'parent', app.UIAxes);
+            imshow(blankPic, 'parent', app.UIAxes2);
+            imshow(blankPic, 'parent', app.UIAxes3);
+            imshow(blankPic, 'parent', app.UIAxes4);
+            imshow(blankPic, 'parent', app.UIAxesLeft);
+            imshow(blankPic, 'parent', app.UIAxesRight);
+            
+            app.connectLamp.Color='black';
+            cd 'C:\Users\ibrahim\Desktop';
+            
+        end
+
+        % Button pushed function: connectButton
+        function connectButtonPushed(app, event)
+            %load('calibrationSession5.mat');
+            global a; global sensor;
+            global r1;global r2;global l1;global l2;
+            global m1;global m2; global m3; global m4;
+            global trigPin; global echoPin;
+            comVariable= app.COMEditField.Value;
+            a = arduino(comVariable, 'Uno', 'Libraries', 'JRodrigoTech/HCSR04');
+            app.connectLamp.Color='green';
+            
+            
+            
+            % Right-hand side motors:
+            r1='D2';
+            r2='D4';
+            % Left-hand side motors:
+            l1='D7';
+            l2='D8';
+            
+            % Analog signal for motors speed:
+            m1='D10';
+            m2='D3';
+            m3='D6';
+            m4='D9';
+            
+            % Ultrasonic code:
+            trigPin = 'D11';    % Trigger
+            echoPin = 'D12';    % Echo
+            
+            
+            sensor = addon(a, 'JRodrigoTech/HCSR04', trigPin, echoPin);
+            
+            
+            configurePin(a,r1, 'DigitalOutput');
+            configurePin(a,r2, 'DigitalOutput');
+            configurePin(a,l1, 'DigitalOutput');
+            configurePin(a,l2, 'DigitalOutput');
+            configurePin(a,m1, 'DigitalOutput');
+            configurePin(a,m2, 'DigitalOutput');
+            configurePin(a,m3, 'DigitalOutput');
+            configurePin(a,m4, 'DigitalOutput');
+            
+            
+            
+            %             configurePin(a,trigPin, 'DigitalOutput');
+            %             configurePin(a,echoPin, 'DigitalInput');
+            
+            writePWMVoltage(a,m1,(255/255)*5);
+            writePWMVoltage(a,m2,(245/255)*5);
+            writePWMVoltage(a,m3,(245/255)*5);
+            writePWMVoltage(a,m4,(255/255)*5);
+            
+            
+            
+        end
+
+        % Callback function
+        function DisconnectButtonPushed(app, event)
+            app.connectLamp.Color='black';
+            delete(instrfind({'Port'},{'COM4'}));
+            clear
+            
+        end
+
+        % Button pushed function: searchButton
+        function searchButtonPushed(app, event)
+            global cam1; global cam2;
+            % global a; global r1;global r2;global l1;global l2;
+            global x;
+            global distance;
+            global blankPic;
+            
+            try
+                img = snapshot(cam1);
+                img2 = snapshot(cam2);
+                imwrite(img,'picLeft.jpg');
+                imwrite(img2,'picRight.jpg')
+                
+            catch
+                app.MessageBoxTextArea.Value='Cameras are not connected, connect to cameras Please.';
+            end
+            
+            
+            
+            
+            
+            
+            
+            J1=imread('picLeft.jpg');
+            J2=imread('picRight.jpg');
+            J1=imrotate(J1,90);
+            J2=imrotate(J2,90);
+            
+            load('calibrationSession5.mat');
+            [J1,J2] = rectifyStereoImages(J1,J2,calibrationSession.CameraParameters);
+            
+            I1=rgb2gray(J1);
+            I2=rgb2gray(J2);
+            
+            
+            J1=imgaussfilt(I1,1.2);
+            J2=imgaussfilt(I2,1.2);
+            J1=255-J1;
+            J2=255-J2;
+            
+            try
+                %K1=255-I1;
+                [Center1,Radius1]=imfindcircles(I1,[10 150],'ObjectPolarity',...
+                    'dark', 'Sensitivity',0.85);
+                
+                Center1=Center1(1,:);
+                Radius1=Radius1(1,:);
+                
+            catch
+                answer='No Circle Found!';
+                app.MessageBoxTextArea.Value=answer;
+                app.DistancecmTextArea.Value=' ';
+            end
+            
+            try
+                %K2=255-I2;
+                [Center2,Radius2]=imfindcircles(I2,[10 150],'ObjectPolarity',...
+                    'dark', 'Sensitivity',0.85);
+                
+                Center2=Center2(1,:);
+                Radius2=Radius2(1,:);
+                
+            catch
+                answer='No Circle Found!';
+                app.MessageBoxTextArea.Value=answer;
+                app.DistancecmTextArea.Value=' ';
+            end
+            
+            if mean(Radius1) > 0 && mean(Radius2) > 0
+                
+                disparityRange = [0 128]; % arbitrary number and divisable by 8, max = 128
+                disparityMap = disparity(J1,J2,'BlockSize', 15,'DisparityRange',disparityRange);
+                
+                %disparity image
+                imshow(disparityMap,disparityRange, 'parent', app.UIAxes4);
+                answer='Circle Found!';
+                app.MessageBoxTextArea.Value=answer;
+                try
+                    
+                    
+                    theCenter=(Center1+Center2)/2;
+                    
+                    x=floor(theCenter(1));
+                    y=floor(theCenter(2));
+                    
+                    
+                    f=846;
+                    b=10;
+                    
+                    distance=f*b/disparityMap(y,x);
+                    
+                    if distance < 40
+                        distance=f*b/disparityMap(y,x-10);
+                    end
+                    if distance < 40
+                        distance=f*b/disparityMap(y,x-20);
+                    end
+                    if distance < 40
+                        distance=f*b/disparityMap(y,x-30);
+                    end
+                    if distance < 40
+                        distance=f*b/disparityMap(y,x-40);
+                    end
+                    if distance < 40
+                        distance=f*b/disparityMap(y,x-50);
+                    end
+                    
+                   
+                    
+                    %errorFactor=distance*0.136; %initial error factor
+                    %distanceRead=distance+errorFactor;
+                    distanceRead=distance;
+                    
+                    %distance=1.34*distanceRead-35.4; % error equation
+                    %distance=1.14*distanceRead+-30.967; % error equation
+                    %distance=0.0021*distanceRead^2+0.727*distanceRead+5.48;
+                    
+                    distance=0.0016*distanceRead^2+0.87*distanceRead+3.4;
+                    
+                    %showing messages:
+                    distanceStr=num2str(distance);
+                    app.DistancecmTextArea.Value=distanceStr;
+                    
+                    if distance < 0
+                        app.DistancecmTextArea.Value=' ';
+                        app.MessageBoxTextArea.Value='Try again :)';
+                        
+                    end
+                catch
+                    answer='No Circle Found!';
+                    app.MessageBoxTextArea.Value=answer;
+                    app.DistancecmTextArea.Value=' ';
+                    
+                    imshow(blankPic, 'parent', app.UIAxes);
+                    imshow(blankPic, 'parent', app.UIAxes2);
+                    imshow(blankPic, 'parent', app.UIAxes3);
+                    imshow(blankPic, 'parent', app.UIAxes4);
+                    
+                end
+            else
+                answer='No Circle Found!';
+                app.MessageBoxTextArea.Value=answer;
+                app.DistancecmTextArea.Value=' ';
+                
+                imshow(blankPic, 'parent', app.UIAxes);
+                imshow(blankPic, 'parent', app.UIAxes2);
+                imshow(blankPic, 'parent', app.UIAxes3);
+                imshow(blankPic, 'parent', app.UIAxes4);
+                
+                
+            end
+            
+            %showing proper images:
+            
+            %left
+            imshow(I1, 'parent', app.UIAxes);
+            
+            
+            %right
+            imshow(I2, 'parent', app.UIAxes2);
+            
+            
+            %both
+            imshow(stereoAnaglyph(I1,I2), 'parent',app.UIAxes3)
+            
+            java.lang.Thread.sleep(100);
+            
+            
+            
+        end
+
+        % Button pushed function: goButton
+        function goButtonPushed(app, event)
+            global sensor;
+            global sensorDistance;
+            global distance;
+            global cam1;
+            global cam2;
+            global blankPic;
+            global oldDistance;
+            
+            oldDistance=distance;
+            obstacleExist=0;
+            obstacleDistance=10;
+            
+            velocity= 20.387 ; %cm/sec
+            distanceReal=distance-60;
+            if distance==0
+                distanceReal=0;
+            end
+            
+            time = abs(distanceReal/velocity); %time needed to get there in seconds
+            
+            if distance==0
+                app.MessageBoxTextArea.Value='Press the Search button first.';
+            end
+            
+            
+            if floor(time)>=4 && floor(time)<=6
+                n=2;
+            elseif floor(time)>6 && floor(time)<=9
+                n=4;
+            elseif floor(time)>9 && floor(time)<=14
+                n=6;
+            elseif floor(time)>14
+                n=8;
+            else
+                n=1;
+            end
+            
+            
+            
+            for i=1:n
+                
+                
+                if time==0
+                    break;
+                end
+                
+                straightAhead(app);
+                t1=now;
+                
+                t=0;
+                while t < time/n
+                    sensorDistance = readDistance(sensor);
+                    sensorDistance=sensorDistance*100;
+                    
+                    if sensorDistance <= obstacleDistance
+                        %avoid function:
+                        
+                        app.MessageBoxTextArea.Value='Obstacle is found! Avoiding now.';
+                        
+                        stopBoy(app);                    %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        turnCounterClockwise(app);        %1) turning left
+                        java.lang.Thread.sleep(1000);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        straightAhead(app);                 %2) going straight
+                        java.lang.Thread.sleep(1500);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        turnClockwise(app);                   %3) turning right
+                        java.lang.Thread.sleep(1000);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        straightAhead(app);                 %4) going straight
+                        java.lang.Thread.sleep(3000);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        turnClockwise(app);                %5) turning right
+                        java.lang.Thread.sleep(1100);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        straightAhead(app);                 %6) going straight
+                        java.lang.Thread.sleep(1500);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        
+                        turnCounterClockwise(app);        %7) turning left
+                        java.lang.Thread.sleep(1150);
+                        
+                        stopBoy(app);                        %stopping
+                        java.lang.Thread.sleep(100);
+                        obstacleExist=1;
+                        break; %break while
+                    end %end if
+                    
+                    t2=now;
+                    t=t2-t1;
+                    t=t*60*60*24;
+                    
+                end %end while
+                
+                if distance==0
+                    obstacleExist=2; %will need it after the for loop
+                    %                 and has nothing to do with obstacles.
+                    
+                    break; %break for
+                    
+                end
+                
+                
+                app.MessageBoxTextArea.Value='Following circle.';
+                stopBoy(app);
+                
+                
+                if obstacleExist ==1
+                    app.MessageBoxTextArea.Value='Obstacle Avoided.';
+                    break; %break for
+                    
+                end
+                
+                
+                
+                %here was the search code;
+                searchButtonPushed(app);
+                
+                
+                
+                
+                
+                
+            end     % end of for
+            
+            if obstacleExist == 1
+                distance=0;
+                %app.MessageBoxTextArea.Value='Search again please :>';
+                searchGo(app);
+                %searchButtonPushed(app, event);
+                %java.lang.Thread.sleep(7000);
+                %goButtonPushed(app, event);
+                
+            elseif obstacleExist==2
+                app.MessageBoxTextArea.Value='Press the Search button first.';
+                app.DistancecmTextArea.Value=' ';
+                
+            else
+                
+                answer='We are here!';
+                app.MessageBoxTextArea.Value=answer;
+                app.DistancecmTextArea.Value=' ';
+                distance=0;
+                
+            end
+            
+            
+        end
+
+        % Button pushed function: RotateCcwButton
+        function RotateCcwButtonPushed(app, event)
+            %             global a;
+            %             global r1; global r2; global l1; global l2;
+            
+            turnCounterClockwise(app);
+            java.lang.Thread.sleep(250);
+            
+            stopBoy(app);
+            
+        end
+
+        % Button pushed function: RotateCwButton
+        function RotateCwButtonPushed(app, event)
+            %             global a;
+            %             global r1; global r2; global l1; global l2;
+            
+            turnClockwise(app);
+            java.lang.Thread.sleep(250);
+            
+            stopBoy(app);
+        end
+
+        % Button pushed function: ConnectingCamerasButton
+        function ConnectingCamerasButtonPushed(app, event)
+            global cam1; global cam2;
+            
+            L= app.LeftCamEditField.Value;
+            R=app.RightCamEditField.Value;
+            
+            cam1=webcam(L);
+            cam2=webcam(R);
+            
+            value1 = app.LeftCamSlider.Value; %setting exposure of cam1
+            cam1.Exposure=value1;
+            
+            value2 = app.RightCamSlider.Value; %setting expoure of cam2
+            cam2.Exposure=value2;
+            
+            frame1=snapshot(cam1);
+            frame2=snapshot(cam2);
+            imwrite(frame1,'livefeedLeft.jpg');
+            imwrite(frame2,'livefeedRight.jpg');
+            
+            frame1=imread('livefeedLeft.jpg');
+            frame2=imread('livefeedRight.jpg');
+            
+            frame1=imrotate(frame1,90);
+            frame2=imrotate(frame2,90);
+            
+            %load('calibrationSession5.mat');
+            %[frame1,frame2] = rectifyStereoImages(frame1,frame2,calibrationSession.CameraParameters);
+            
+            im1=image(app.UIAxesLeft, zeros(size(frame1),'uint8'));
+            axis(app.UIAxesLeft,'image');
+            im2=image(app.UIAxesRight, zeros(size(frame2),'uint8'));
+            axis(app.UIAxesRight,'image');
+            
+            
+            
+            preview(cam1,im1);
+            preview(cam2,im2);
+            
+            
+        end
+
+        % Button pushed function: DisconnectingCamerasButton
+        function DisconnectingCamerasButtonPushed(app, event)
+            global cam1;
+            global cam2;
+            global blankPic;
+            
+            delete(cam1); delete(cam2);
+            clear cam1; clear cam2
+            
+            imshow(blankPic, 'parent', app.UIAxesLeft);
+            imshow(blankPic, 'parent', app.UIAxesRight);
+            
+            
+        end
+
+        % Button pushed function: AdjustPositionButton
+        function AdjustPositionButtonPushed(app, event)
+            global x;
+            if x < 157
+                delay=157-x;
+                turnCounterClockwise(app);
+                java.lang.Thread.sleep(delay);
+                stopBoy(app);
+                
+            end
+            
+            if x > 217
+                delay=x-217;
+                turnClockwise(app);
+                java.lang.Thread.sleep(delay);
+                stopBoy(app);
+            end
+            
+            
+        end
+
+        % Button pushed function: StopButton
+        function StopButtonPushed(app, event)
+            stopBoy(app);
+        end
+
+        % Button pushed function: XButton
+        function XButtonPushed(app, event)
+            close all force;
+        end
+
+        % Close request function: MobileRobotControlMenuUIFigure
+        function MobileRobotControlMenuUIFigureCloseRequest(app, event)
+            delete(app);
+            
+        end
+
+        % Button pushed function: forwardButton
+        function forwardButtonPushed(app, event)
+            straightAhead(app);
+            java.lang.Thread.sleep(75);
+            stopBoy(app);
+        end
+
+        % Button pushed function: rightButton
+        function rightButtonPushed(app, event)
+            turnClockwise(app);
+            java.lang.Thread.sleep(75);
+            stopBoy(app);
+        end
+
+        % Button pushed function: backwardButton
+        function backwardButtonPushed(app, event)
+            reverse(app);
+            java.lang.Thread.sleep(75);
+            stopBoy(app);
+        end
+
+        % Button pushed function: leftButton
+        function leftButtonPushed(app, event)
+            turnCounterClockwise(app);
+            java.lang.Thread.sleep(75);
+            stopBoy(app);
+        end
+
+        % Value changed function: RightCamSlider
+        function RightCamSliderValueChanged(app, event)
+            global cam2;
+            
+            value2 = app.RightCamSlider.Value;
+            %value2=floor(value2);
+            cam2.Exposure=value2;
+        end
+
+        % Value changed function: LeftCamSlider
+        function LeftCamSliderValueChanged(app, event)
+            global cam1;
+            
+            value1 = app.LeftCamSlider.Value;
+            %value1=floor(value1);
+            cam1.Exposure=value1;
+        end
+
+        % Value changed function: LeftCamSlider_2
+        function LeftCamSlider_2ValueChanged(app, event)
+            global cam1;
+            
+            value1 = app.LeftCamSlider_2.Value;
+            %value1=floor(value1);
+            cam1.Brightness=value1;
+        end
+
+        % Value changed function: RightCamSlider_2
+        function RightCamSlider_2ValueChanged(app, event)
+            global cam2;
+            
+            value2 = app.RightCamSlider_2.Value;
+            %value2=floor(value2);
+            cam2.Brightness=value2;
+            
+        end
+    end
+
+    % App initialization and construction
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create MobileRobotControlMenuUIFigure
+            app.MobileRobotControlMenuUIFigure = uifigure;
+            app.MobileRobotControlMenuUIFigure.Color = [0.9373 0.9373 0.9373];
+            app.MobileRobotControlMenuUIFigure.Position = [100 100 1101 650];
+            app.MobileRobotControlMenuUIFigure.Name = 'Mobile Robot Control Menu';
+            app.MobileRobotControlMenuUIFigure.CloseRequestFcn = createCallbackFcn(app, @MobileRobotControlMenuUIFigureCloseRequest, true);
+            setAutoResize(app, app.MobileRobotControlMenuUIFigure, false)
+
+            % Create UIAxes
+            app.UIAxes = uiaxes(app.MobileRobotControlMenuUIFigure);
+            title(app.UIAxes, 'Left Image');
+            app.UIAxes.Color = [0.9373 0.9373 0.9373];
+            app.UIAxes.Position = [179 162 211 229];
+
+            % Create UIAxes2
+            app.UIAxes2 = uiaxes(app.MobileRobotControlMenuUIFigure);
+            title(app.UIAxes2, 'Right Image');
+            app.UIAxes2.Color = [0.9373 0.9373 0.9373];
+            app.UIAxes2.Position = [410 162 211 229];
+
+            % Create UIAxes3
+            app.UIAxes3 = uiaxes(app.MobileRobotControlMenuUIFigure);
+            title(app.UIAxes3, 'Both');
+            app.UIAxes3.Color = [0.9373 0.9373 0.9373];
+            app.UIAxes3.Position = [651 412 211 229];
+
+            % Create UIAxes4
+            app.UIAxes4 = uiaxes(app.MobileRobotControlMenuUIFigure);
+            title(app.UIAxes4, 'Disparity');
+            app.UIAxes4.Color = [0.9373 0.9373 0.9373];
+            app.UIAxes4.Position = [871 412 211 229];
+
+            % Create searchButton
+            app.searchButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.searchButton.ButtonPushedFcn = createCallbackFcn(app, @searchButtonPushed, true);
+            app.searchButton.Icon = 'searchIcon.png';
+            app.searchButton.Position = [671 91 70 60];
+            app.searchButton.Text = '';
+
+            % Create goButton
+            app.goButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.goButton.ButtonPushedFcn = createCallbackFcn(app, @goButtonPushed, true);
+            app.goButton.Icon = 'go.png';
+            app.goButton.Position = [881 91 80 60];
+            app.goButton.Text = '';
+
+            % Create MessageBoxTextAreaLabel
+            app.MessageBoxTextAreaLabel = uilabel(app.MobileRobotControlMenuUIFigure);
+            app.MessageBoxTextAreaLabel.HorizontalAlignment = 'right';
+            app.MessageBoxTextAreaLabel.FontWeight = 'bold';
+            app.MessageBoxTextAreaLabel.Position = [696 376 83 15];
+            app.MessageBoxTextAreaLabel.Text = 'Message Box';
+
+            % Create MessageBoxTextArea
+            app.MessageBoxTextArea = uitextarea(app.MobileRobotControlMenuUIFigure);
+            app.MessageBoxTextArea.Position = [640 291 200 82];
+
+            % Create DistancecmTextAreaLabel
+            app.DistancecmTextAreaLabel = uilabel(app.MobileRobotControlMenuUIFigure);
+            app.DistancecmTextAreaLabel.HorizontalAlignment = 'right';
+            app.DistancecmTextAreaLabel.FontWeight = 'bold';
+            app.DistancecmTextAreaLabel.Position = [641 266 85 15];
+            app.DistancecmTextAreaLabel.Text = 'Distance (cm)';
+
+            % Create DistancecmTextArea
+            app.DistancecmTextArea = uitextarea(app.MobileRobotControlMenuUIFigure);
+            app.DistancecmTextArea.Position = [640 181 92 80];
+
+            % Create connectButton
+            app.connectButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.connectButton.ButtonPushedFcn = createCallbackFcn(app, @connectButtonPushed, true);
+            app.connectButton.Icon = 'connect.png';
+            app.connectButton.VerticalAlignment = 'bottom';
+            app.connectButton.Position = [281 90 60 61];
+            app.connectButton.Text = '';
+
+            % Create disconnectButton
+            app.disconnectButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.disconnectButton.ButtonPushedFcn = createCallbackFcn(app, @DisconnectButtonPushed, true);
+            app.disconnectButton.Icon = 'disconnect.png';
+            app.disconnectButton.Position = [281 21 60 60];
+            app.disconnectButton.Text = '';
+
+            % Create RotateCcwButton
+            app.RotateCcwButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.RotateCcwButton.ButtonPushedFcn = createCallbackFcn(app, @RotateCcwButtonPushed, true);
+            app.RotateCcwButton.Icon = 'ccw.png';
+            app.RotateCcwButton.Position = [561 91 80 60];
+            app.RotateCcwButton.Text = '';
+
+            % Create RotateCwButton
+            app.RotateCwButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.RotateCwButton.ButtonPushedFcn = createCallbackFcn(app, @RotateCwButtonPushed, true);
+            app.RotateCwButton.Icon = 'cw.png';
+            app.RotateCwButton.Position = [771.5 91 79.5 60];
+            app.RotateCwButton.Text = '';
+
+            % Create Label
+            app.Label = uilabel(app.MobileRobotControlMenuUIFigure);
+            app.Label.HorizontalAlignment = 'right';
+            app.Label.Position = [461 116 25 15];
+            app.Label.Text = '';
+
+            % Create connectLamp
+            app.connectLamp = uilamp(app.MobileRobotControlMenuUIFigure);
+            app.connectLamp.Position = [461 116 15 15];
+            app.connectLamp.Color = [0.4431 0.4941 0.4549];
+
+            % Create COMEditFieldLabel
+            app.COMEditFieldLabel = uilabel(app.MobileRobotControlMenuUIFigure);
+            app.COMEditFieldLabel.HorizontalAlignment = 'right';
+            app.COMEditFieldLabel.Position = [351 116 36 15];
+            app.COMEditFieldLabel.Text = 'COM:';
+
+            % Create COMEditField
+            app.COMEditField = uieditfield(app.MobileRobotControlMenuUIFigure, 'text');
+            app.COMEditField.Position = [395 112 55 22];
+            app.COMEditField.Value = 'COM4';
+
+            % Create UIAxesLeft
+            app.UIAxesLeft = uiaxes(app.MobileRobotControlMenuUIFigure);
+            title(app.UIAxesLeft, 'Left Cam View');
+            app.UIAxesLeft.Color = [0.9373 0.9373 0.9373];
+            app.UIAxesLeft.Position = [11 411 300 230];
+
+            % Create StopButton
+            app.StopButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.StopButton.ButtonPushedFcn = createCallbackFcn(app, @StopButtonPushed, true);
+            app.StopButton.FontName = 'Bookman';
+            app.StopButton.FontSize = 28;
+            app.StopButton.FontWeight = 'bold';
+            app.StopButton.FontColor = [1 0 0];
+            app.StopButton.Position = [971 91 80 60];
+            app.StopButton.Text = 'Stop';
+
+            % Create ConnectingCamerasButton
+            app.ConnectingCamerasButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.ConnectingCamerasButton.ButtonPushedFcn = createCallbackFcn(app, @ConnectingCamerasButtonPushed, true);
+            app.ConnectingCamerasButton.FontSize = 14;
+            app.ConnectingCamerasButton.FontWeight = 'bold';
+            app.ConnectingCamerasButton.FontColor = [0.051 0.4353 0.3451];
+            app.ConnectingCamerasButton.Position = [41.25 91 99.75 60];
+            app.ConnectingCamerasButton.Text = {'Connecting'; 'Cameras'};
+
+            % Create DisconnectingCamerasButton
+            app.DisconnectingCamerasButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.DisconnectingCamerasButton.ButtonPushedFcn = createCallbackFcn(app, @DisconnectingCamerasButtonPushed, true);
+            app.DisconnectingCamerasButton.FontWeight = 'bold';
+            app.DisconnectingCamerasButton.FontColor = [0.5922 0.0902 0.0902];
+            app.DisconnectingCamerasButton.Position = [41 21 100 60];
+            app.DisconnectingCamerasButton.Text = {'Disconnecting'; 'Cameras'};
+
+            % Create AdjustPositionButton
+            app.AdjustPositionButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.AdjustPositionButton.ButtonPushedFcn = createCallbackFcn(app, @AdjustPositionButtonPushed, true);
+            app.AdjustPositionButton.FontSize = 14;
+            app.AdjustPositionButton.FontWeight = 'bold';
+            app.AdjustPositionButton.FontColor = [0.0353 0.0706 0.4588];
+            app.AdjustPositionButton.Position = [651 21 110 50];
+            app.AdjustPositionButton.Text = {'Adjust'; 'Position'};
+
+            % Create UIAxesRight
+            app.UIAxesRight = uiaxes(app.MobileRobotControlMenuUIFigure);
+            title(app.UIAxesRight, 'Right Cam View');
+            app.UIAxesRight.Color = [0.9373 0.9373 0.9373];
+            app.UIAxesRight.Position = [321 411 300 230];
+
+            % Create XButton
+            app.XButton = uibutton(app.MobileRobotControlMenuUIFigure, 'push');
+            app.XButton.ButtonPushedFcn = createCallbackFcn(app, @XButtonPushed, true);
+            app.XButton.BackgroundColor = [0.9686 0.098 0.098];
+            app.XButton.FontSize = 24;
+            app.XButton.FontColor = [0.9882 0.9882 0.9882];
+            app.XButton.Position = [1051 10 40 41];
+            app.XButton.Text = 'X';
+
+            % Create ManualControlPanel
+            app.ManualControlPanel = uipanel(app.MobileRobotControlMenuUIFigure);
+            app.ManualControlPanel.Title = 'Manual Control';
+            app.ManualControlPanel.FontWeight = 'bold';
+            app.ManualControlPanel.Position = [881 231 170 160];
+
+            % Create forwardButton
+            app.forwardButton = uibutton(app.ManualControlPanel, 'push');
+            app.forwardButton.ButtonPushedFcn = createCallbackFcn(app, @forwardButtonPushed, true);
+            app.forwardButton.Icon = 'forward.png';
+            app.forwardButton.Position = [61 90 50 40];
+            app.forwardButton.Text = '';
+
+            % Create rightButton
+            app.rightButton = uibutton(app.ManualControlPanel, 'push');
+            app.rightButton.ButtonPushedFcn = createCallbackFcn(app, @rightButtonPushed, true);
+            app.rightButton.Icon = 'right.png';
+            app.rightButton.Position = [111 50 50 40];
+            app.rightButton.Text = '';
+
+            % Create leftButton
+            app.leftButton = uibutton(app.ManualControlPanel, 'push');
+            app.leftButton.ButtonPushedFcn = createCallbackFcn(app, @leftButtonPushed, true);
+            app.leftButton.Icon = 'left.png';
+            app.leftButton.Position = [9 50 50 39];
+            app.leftButton.Text = '';
+
+            % Create backwardButton
+            app.backwardButton = uibutton(app.ManualControlPanel, 'push');
+            app.backwardButton.ButtonPushedFcn = createCallbackFcn(app, @backwardButtonPushed, true);
+            app.backwardButton.Icon = 'backward.png';
+            app.backwardButton.Position = [59 10 50 39];
+            app.backwardButton.Text = '';
+
+            % Create LeftCamEditFieldLabel
+            app.LeftCamEditFieldLabel = uilabel(app.MobileRobotControlMenuUIFigure);
+            app.LeftCamEditFieldLabel.HorizontalAlignment = 'right';
+            app.LeftCamEditFieldLabel.Position = [154 128 54 15];
+            app.LeftCamEditFieldLabel.Text = 'Left Cam';
+
+            % Create LeftCamEditField
+            app.LeftCamEditField = uieditfield(app.MobileRobotControlMenuUIFigure, 'numeric');
+            app.LeftCamEditField.Position = [224 124 16 22];
+            app.LeftCamEditField.Value = 1;
+
+            % Create RightCamEditFieldLabel
+            app.RightCamEditFieldLabel = uilabel(app.MobileRobotControlMenuUIFigure);
+            app.RightCamEditFieldLabel.HorizontalAlignment = 'right';
+            app.RightCamEditFieldLabel.Position = [147 99 63 15];
+            app.RightCamEditFieldLabel.Text = 'Right Cam';
+
+            % Create RightCamEditField
+            app.RightCamEditField = uieditfield(app.MobileRobotControlMenuUIFigure, 'numeric');
+            app.RightCamEditField.Position = [224 95 17 22];
+            app.RightCamEditField.Value = 3;
+
+            % Create TabGroup
+            app.TabGroup = uitabgroup(app.MobileRobotControlMenuUIFigure);
+            app.TabGroup.Position = [12 170 158 221];
+
+            % Create ExposureTab
+            app.ExposureTab = uitab(app.TabGroup);
+            app.ExposureTab.Title = 'Exposure';
+            app.ExposureTab.Units = 'pixels';
+
+            % Create RightCamSliderLabel
+            app.RightCamSliderLabel = uilabel(app.ExposureTab);
+            app.RightCamSliderLabel.HorizontalAlignment = 'center';
+            app.RightCamSliderLabel.VerticalAlignment = 'center';
+            app.RightCamSliderLabel.FontWeight = 'bold';
+            app.RightCamSliderLabel.Position = [95 165 35 28];
+            app.RightCamSliderLabel.Text = {'Right'; 'Cam'};
+
+            % Create RightCamSlider
+            app.RightCamSlider = uislider(app.ExposureTab);
+            app.RightCamSlider.Limits = [-9 0];
+            app.RightCamSlider.MajorTicks = [-9 -8 -7 -6 -5 -4 -3 -2 -1 0];
+            app.RightCamSlider.Orientation = 'vertical';
+            app.RightCamSlider.ValueChangedFcn = createCallbackFcn(app, @RightCamSliderValueChanged, true);
+            app.RightCamSlider.MinorTicks = [];
+            app.RightCamSlider.Position = [100 27 3 125];
+            app.RightCamSlider.Value = -4;
+
+            % Create LeftCamSliderLabel
+            app.LeftCamSliderLabel = uilabel(app.ExposureTab);
+            app.LeftCamSliderLabel.HorizontalAlignment = 'center';
+            app.LeftCamSliderLabel.VerticalAlignment = 'center';
+            app.LeftCamSliderLabel.FontWeight = 'bold';
+            app.LeftCamSliderLabel.Position = [29 165 32 28];
+            app.LeftCamSliderLabel.Text = {'Left'; 'Cam'};
+
+            % Create LeftCamSlider
+            app.LeftCamSlider = uislider(app.ExposureTab);
+            app.LeftCamSlider.Limits = [-9 0];
+            app.LeftCamSlider.MajorTicks = [-9 -8 -7 -6 -5 -4 -3 -2 -1 0];
+            app.LeftCamSlider.Orientation = 'vertical';
+            app.LeftCamSlider.ValueChangedFcn = createCallbackFcn(app, @LeftCamSliderValueChanged, true);
+            app.LeftCamSlider.MinorTicks = [];
+            app.LeftCamSlider.Position = [29 20 3 134];
+            app.LeftCamSlider.Value = -4;
+
+            % Create BrightnessTab
+            app.BrightnessTab = uitab(app.TabGroup);
+            app.BrightnessTab.Title = 'Brightness';
+            app.BrightnessTab.Units = 'pixels';
+
+            % Create LeftCamSlider_2Label
+            app.LeftCamSlider_2Label = uilabel(app.BrightnessTab);
+            app.LeftCamSlider_2Label.HorizontalAlignment = 'center';
+            app.LeftCamSlider_2Label.VerticalAlignment = 'center';
+            app.LeftCamSlider_2Label.FontWeight = 'bold';
+            app.LeftCamSlider_2Label.Position = [22.5 164 32 28];
+            app.LeftCamSlider_2Label.Text = {'Left'; 'Cam'};
+
+            % Create LeftCamSlider_2
+            app.LeftCamSlider_2 = uislider(app.BrightnessTab);
+            app.LeftCamSlider_2.Limits = [0 255];
+            app.LeftCamSlider_2.Orientation = 'vertical';
+            app.LeftCamSlider_2.ValueChangedFcn = createCallbackFcn(app, @LeftCamSlider_2ValueChanged, true);
+            app.LeftCamSlider_2.Position = [24 16 3 135];
+            app.LeftCamSlider_2.Value = 109;
+
+            % Create RightCamSlider_2Label
+            app.RightCamSlider_2Label = uilabel(app.BrightnessTab);
+            app.RightCamSlider_2Label.HorizontalAlignment = 'right';
+            app.RightCamSlider_2Label.VerticalAlignment = 'center';
+            app.RightCamSlider_2Label.FontWeight = 'bold';
+            app.RightCamSlider_2Label.Position = [80 164 35 28];
+            app.RightCamSlider_2Label.Text = {'Right'; 'Cam'};
+
+            % Create RightCamSlider_2
+            app.RightCamSlider_2 = uislider(app.BrightnessTab);
+            app.RightCamSlider_2.Limits = [0 255];
+            app.RightCamSlider_2.Orientation = 'vertical';
+            app.RightCamSlider_2.ValueChangedFcn = createCallbackFcn(app, @RightCamSlider_2ValueChanged, true);
+            app.RightCamSlider_2.Position = [85 16 3 137];
+            app.RightCamSlider_2.Value = 109;
+        end
+    end
+
+    methods (Access = public)
+
+        % Construct app
+        function app = MRVS()
+
+            % Create and configure components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.MobileRobotControlMenuUIFigure)
+
+            % Execute the startup function
+            runStartupFcn(app, @startupFcn)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.MobileRobotControlMenuUIFigure)
+        end
+    end
+end

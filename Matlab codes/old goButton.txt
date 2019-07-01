@@ -1,0 +1,105 @@
+global a; global sensor;
+                        global r1; global r2; global l1; global l2;
+            global sensorDistance;
+            global distance;
+            obstacleDistance=20;
+            stopDelay=0.25;
+            rotDelay=1.1;
+            goDelay=2;
+            gooDelay=3;
+            times=0;
+            t=0; %this is my time counter!
+            tloopAdd=0; tIf=0; tloop2Add=0; tIff=0;
+            bool1=0;
+            
+            %velocity= 20.387 cm/sec
+            
+            timeNeeded= distance/20.387;
+            
+            
+            %for loop until it reaches goal:
+            while t < timeNeeded
+                
+                
+                straightAhead(app);
+                t1=now;
+                
+                sensorDistance = readDistance(sensor); %distance in meters
+                sensorDistance=sensorDistance*100; % to get distance in cm
+                
+                
+                while sensorDistance <= obstacleDistance
+                    tloop=now; %loop counter
+                    bool1=1;
+                    stopBoy(app);
+                    pause(stopDelay);
+                    
+                    turnCounterClockwise(app);
+                    pause(rotDelay);
+                    
+                    straightAhead(app);
+                    pause(goDelay);
+                    
+                    stopBoy(app);
+                    pause(stopDelay);
+                    
+                    turnClockwise(app);
+                    pause(rotDelay);
+                    
+                    stopBoy(app);
+                    pause(stopDelay);
+                    
+                    times=times+1;
+                    
+                    sensorDistance = readDistance(sensor); %distance in meters
+                    sensorDistance=sensorDistance*100; % to get distance in cm
+                    tlooop=now;
+                    tloop=tlooop-tloop;
+                    tloopAdd=tloopAdd+tloop;
+                end
+                if bool1==1
+                    tIf1=now; %if counters
+                    straightAhead(app);
+                    pause(gooDelay);
+                    
+                    stopBoy(app);
+                    pause(stopDelay);
+                    
+                    turnClockwise(app);
+                    pause(rotDelay);
+                    tIf2=now;
+                    tIf=tIf2-tIf1;
+                end
+                
+                while times > 0
+                    tloop2=now; %counter
+                    
+                    straightAhead(app);
+                    pause(goDelay);
+                    
+                    times=times-1;
+                    
+                    tlooop2=now;
+                    tloop2=tlooop2-tloop2;
+                    tloop2Add=tloop2Add+tloop2;
+                end
+                if bool1==1
+                    tIf11=now;
+                    turnCounterClockwise(app);
+                    pause(rotDelay);
+                    
+                    stopBoy(app);
+                    pause(stopDelay);
+                    tIf22=now;
+                    tIff=tIf22-tIf11;
+                end
+                
+                t2=now;
+                t = t2 - t1;
+                t=t-tIf-tloopAdd-tloop2Add-tIff;
+                t = t *24*60*60;
+                
+                
+            end %big while
+            
+            
